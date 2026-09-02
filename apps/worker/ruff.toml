@@ -1,0 +1,10 @@
+# The worker shares the API's lint and format rules.
+#
+# Ruff resolves configuration from each *file's* location, not from the working
+# directory, so `apps/worker` needs its own entry point or it would silently be
+# linted with ruff's defaults instead of the project's rules.
+extend = "../api/pyproject.toml"
+
+# First-party roots for import sorting: `tasks`/`worker` live here, `app` lives
+# in the API. Without this, isort would file `app` under third-party imports.
+src = [".", "../api"]
