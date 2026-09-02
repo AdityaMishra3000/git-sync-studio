@@ -1,0 +1,37 @@
+# Normalise line endings: LF in the repository, native in the working tree.
+* text=auto eol=lf
+
+# Files that must keep LF even on Windows checkouts.
+*.sh          text eol=lf
+*.py          text eol=lf
+*.ts          text eol=lf
+*.tsx         text eol=lf
+Dockerfile    text eol=lf
+*.Dockerfile  text eol=lf
+
+# Binary assets - never diff, never normalise.
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.webp   binary
+*.woff   binary
+*.woff2  binary
+*.pdf    binary
+*.zip    binary
+*.joblib binary
+*.pkl    binary
+
+# Lockfiles: keep them in the diff but do not let reviewers drown in them.
+package-lock.json  linguist-generated=true -diff
+
+# ---------------------------------------------------------------------------
+# PHASE 4 (Google Drive backed large files) will register the `gitsync`
+# clean/smudge filter here. Do NOT add these lines before the filter and the
+# `gitsync` CLI actually exist, or checkouts will break.
+#
+#   *.zip     filter=gitsync -text
+#   *.mp4     filter=gitsync -text
+#   data/**   filter=gitsync -text
+# ---------------------------------------------------------------------------

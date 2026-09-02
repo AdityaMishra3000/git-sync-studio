@@ -1,0 +1,19 @@
+# Prettier owns TS/JS/JSON/CSS/MD/YAML. Python is formatted by ruff.
+
+node_modules/
+.next/
+out/
+build/
+dist/
+coverage/
+playwright-report/
+test-results/
+.venv/
+__pycache__/
+*.py
+*.pyi
+package-lock.json
+apps/api/alembic/**
+ml/models/
+ml/datasets/
+LICENSE

@@ -1,0 +1,110 @@
+# ---------------------------------------------------------------------------
+# Secrets and local environment  (PHASE 0 rule: no secrets in git, ever)
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*-private-key.pem
+github-app-*.pem
+client_secret*.json
+credentials.json
+service-account*.json
+token.json
+secrets/
+
+# ---------------------------------------------------------------------------
+# Node / Next.js
+# ---------------------------------------------------------------------------
+node_modules/
+.next/
+out/
+build/
+.turbo/
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.eslintcache
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+dist/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.hypothesis/
+
+# ---------------------------------------------------------------------------
+# Test artefacts
+# ---------------------------------------------------------------------------
+/coverage/
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+
+# ---------------------------------------------------------------------------
+# ML artefacts (PHASE 3) - models are versioned through the model registry,
+# not through git. Keep the directory, drop the binaries.
+# ---------------------------------------------------------------------------
+ml/models/*
+!ml/models/.gitkeep
+ml/datasets/*
+!ml/datasets/.gitkeep
+*.joblib
+*.pkl
+*.parquet
+.ipynb_checkpoints/
+
+# ---------------------------------------------------------------------------
+# CLI local state (PHASE 4)
+# ---------------------------------------------------------------------------
+.gitsync/
+gitsync-cache/
+
+# ---------------------------------------------------------------------------
+# Docker / infra local state
+# ---------------------------------------------------------------------------
+.docker-data/
+*.local.yaml
+*.local.yml
+
+# ---------------------------------------------------------------------------
+# Editors and OS
+# ---------------------------------------------------------------------------
+.idea/
+.vscode/*
+!.vscode/settings.json.example
+!.vscode/extensions.json
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------------------------------------------------------------------------
+# Agent / tooling scratch space
+# ---------------------------------------------------------------------------
+.claude/settings.local.json

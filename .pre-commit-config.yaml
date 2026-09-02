@@ -1,0 +1,52 @@
+# Optional local guard rails. CI is the enforcement point; this catches the same
+# problems before they leave your machine.
+#
+#   pip install pre-commit && pre-commit install
+#
+# Versions match apps/api/pyproject.toml and package.json. Bump them together.
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        # Large binaries belong in Drive-backed storage from PHASE 4, not in git.
+        args: ["--maxkb=1024"]
+      - id: check-merge-conflict
+      - id: check-yaml
+        args: ["--allow-multiple-documents"]
+      - id: check-toml
+      - id: check-json
+        exclude: ^\.vscode/
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.5
+    hooks:
+      - id: ruff-check
+        args: ["--fix"]
+        files: ^(apps/api|apps/worker|ml|cli|repo-analysis)/
+      - id: ruff-format
+        files: ^(apps/api|apps/worker|ml|cli|repo-analysis)/
+
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier
+        entry: npx prettier --write
+        language: system
+        types_or: [ts, tsx, javascript, jsx, json, css, markdown, yaml]
+        exclude: ^(package-lock\.json|apps/api/alembic/)
+
+      - id: no-env-files
+        name: no .env files staged
+        entry: >-
+          bash -c 'git diff --cached --name-only
+          | grep -Eq "(^|/)\.env$|\.pem$|credentials\.json$|client_secret.*\.json$"
+          && { echo "Refusing to commit a secret file."; exit 1; } || exit 0'
+        language: system
+        pass_filenames: false

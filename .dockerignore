@@ -1,0 +1,41 @@
+# Docker build context is the repository root (see infra/docker/*.Dockerfile).
+# Keep the context small: a fat context slows every single build.
+
+.git
+.github
+**/node_modules
+**/.next
+**/out
+**/build
+**/dist
+**/.venv
+**/venv
+**/__pycache__
+**/*.py[cod]
+**/*.egg-info
+**/.mypy_cache
+**/.ruff_cache
+**/.pytest_cache
+**/.turbo
+**/coverage
+**/htmlcov
+**/playwright-report
+**/test-results
+**/.DS_Store
+
+# Secrets and local env must never reach a build layer.
+.env
+.env.*
+!.env.example
+**/*.pem
+secrets/
+
+# Docs and notebooks are not needed to run the services.
+docs
+**/*.ipynb
+**/.ipynb_checkpoints
+
+# ML artefacts and CLI caches.
+ml/models
+ml/datasets
+.gitsync
