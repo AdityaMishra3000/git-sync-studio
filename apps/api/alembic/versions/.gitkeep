@@ -1,0 +1,2 @@
+# Migration scripts land here from PHASE 1 onward.
+# Kept in git so `alembic upgrade head` works on a fresh clone.

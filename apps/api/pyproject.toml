@@ -1,0 +1,128 @@
+[build-system]
+requires = ["setuptools>=80.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gitsync-studio-api"
+version = "0.1.0"
+description = "GitSync Studio backend: repository intelligence, Drive-backed large files, grounded README generation"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+
+# Exact pins on purpose: every teammate and every CI run resolves the same
+# tree. Bumps happen in their own reviewed pull request.
+dependencies = [
+    "fastapi==0.141.1",
+    "uvicorn[standard]==0.52.4",
+    "pydantic==2.13.5",
+    "pydantic-settings==2.15.0",
+    "sqlalchemy[asyncio]==2.0.52",
+    "alembic==1.19.1",
+    "asyncpg==0.31.0",
+    "greenlet==3.5.5",
+    # Capped by kombu[redis] (celery 5.6 requires redis-py < 6.5).
+    "redis==6.4.0",
+    "celery[redis]==5.6.3",
+    "structlog==26.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.1.1",
+    "pytest-asyncio==1.4.0",
+    "pytest-cov==7.1.0",
+    "httpx==0.28.1",
+    "ruff==0.16.5",
+    "mypy==2.3.1",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
+# ---------------------------------------------------------------------------
+# ruff: linter + formatter (replaces black/isort/flake8)
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "B",        # flake8-bugbear
+    "C4",       # comprehensions
+    "UP",       # pyupgrade
+    "ASYNC",    # async correctness
+    "S",        # bandit security rules
+    "BLE",      # blind except
+    "T20",      # no stray print()
+    "SIM",      # simplify
+    "RUF",
+]
+ignore = [
+    "S101",     # pytest relies on assert
+    "B008",     # FastAPI Depends() in defaults is idiomatic
+    "ASYNC109", # health probes take their own timeout on purpose: they must
+                # *report* a timeout, not propagate it to the caller
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106", "S311"]
+"alembic/**" = ["I001"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+# ---------------------------------------------------------------------------
+# mypy: static types
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.12"
+# The Celery worker shares this codebase, so it is type-checked here too.
+files = ["app", "tests", "../worker"]
+mypy_path = "$MYPY_CONFIG_FILE_DIR/../worker"
+strict = true
+warn_unreachable = true
+pretty = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+# These ship no type information.
+module = ["celery.*", "kombu.*"]
+ignore_missing_imports = true
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_decorators = false
+
+[[tool.mypy.overrides]]
+# `@celery_app.task` is untyped upstream; the task bodies themselves are typed.
+module = ["tasks.*", "worker"]
+disallow_untyped_decorators = false
+
+# ---------------------------------------------------------------------------
+# pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "9.0"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "-ra --strict-markers --strict-config"
+markers = [
+    "integration: needs live PostgreSQL/Redis; enable with RUN_INTEGRATION_TESTS=1",
+]
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/__init__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
