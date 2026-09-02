@@ -1,0 +1,159 @@
+name: gitsync-studio
+
+# ===========================================================================
+# GitSync Studio - local development stack
+#
+#   cp .env.example .env
+#   docker compose up --build
+#
+#   web    http://localhost:3100
+#   api    http://localhost:8000/api/v1/health   (docs at /docs)
+#
+# Host ports are bound to 127.0.0.1 so a development database is never exposed
+# to the local network. Change POSTGRES_HOST_PORT etc. in .env, or drop the
+# 127.0.0.1 prefix here if you deliberately need remote access.
+# ===========================================================================
+
+x-backend-build: &backend-build
+  context: .
+  dockerfile: infra/docker/backend.Dockerfile
+  target: dev
+
+x-backend-environment: &backend-environment
+  APP_ENV: ${APP_ENV:-development}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  LOG_FORMAT: ${LOG_FORMAT:-console}
+  SECRET_KEY: ${SECRET_KEY:-dev-only-insecure-secret-change-me}
+  # In-network addresses. These deliberately override the host-facing values in
+  # .env, which point at localhost for psql/alembic/pytest run outside Docker.
+  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-gitsync}:${POSTGRES_PASSWORD:-gitsync_dev_password}@postgres:5432/${POSTGRES_DB:-gitsync}
+  REDIS_URL: redis://redis:6379/0
+  CELERY_BROKER_URL: redis://redis:6379/1
+  CELERY_RESULT_BACKEND: redis://redis:6379/2
+  CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS:-http://localhost:3100,http://localhost:3000}
+
+x-backend-source: &backend-source
+  - ./apps/api:/srv/api
+  - ./apps/worker:/srv/worker
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gitsync}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gitsync_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-gitsync}
+      # Deterministic collation, so ORDER BY does not differ between machines.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5433}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gitsync} -d ${POSTGRES_DB:-gitsync}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    # Persist to disk so a restart does not silently drop queued jobs.
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
+    ports:
+      - "127.0.0.1:${REDIS_HOST_PORT:-6380}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  api:
+    build: *backend-build
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    working_dir: /srv/api
+    env_file:
+      - path: .env
+        required: false
+    environment: *backend-environment
+    ports:
+      - "127.0.0.1:${API_HOST_PORT:-8000}:8000"
+    volumes: *backend-source
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/api/v1/health/live > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  worker:
+    build: *backend-build
+    # No autoreload: `docker compose restart worker` after changing a task.
+    command: ["celery", "-A", "worker", "worker", "--loglevel=INFO", "--queues=default"]
+    working_dir: /srv/worker
+    env_file:
+      - path: .env
+        required: false
+    environment: *backend-environment
+    volumes: *backend-source
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A worker inspect ping --timeout 10 > /dev/null"]
+      interval: 15s
+      timeout: 15s
+      retries: 5
+      start_period: 30s
+    stop_grace_period: 30s
+
+  web:
+    build:
+      context: .
+      dockerfile: infra/docker/web.Dockerfile
+      target: dev
+    environment:
+      NODE_ENV: development
+      # Server-side rendering talks to the api service over the compose network;
+      # the browser bundle gets the host-facing URL.
+      API_INTERNAL_BASE_URL: http://api:8000
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:${API_HOST_PORT:-8000}
+      WATCHPACK_POLLING: "true"
+    ports:
+      - "127.0.0.1:${WEB_HOST_PORT:-3100}:3000"
+    volumes:
+      - ./apps/web:/app/apps/web
+      - ./packages:/app/packages
+      # Keep the image's installed modules and build cache: the bind mounts above
+      # would otherwise hide them behind the host directories.
+      - /app/node_modules
+      - /app/apps/web/node_modules
+      - /app/apps/web/.next
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'node -e "fetch(''http://localhost:3000/'').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"',
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 6
+      start_period: 60s
+
+volumes:
+  postgres-data:
+  redis-data:
