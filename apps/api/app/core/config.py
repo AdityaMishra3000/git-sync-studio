@@ -11,7 +11,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import SecretStr, field_validator
+from pydantic import SecretStr, field_validator, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # apps/api/app/core/config.py -> apps/api/app/core -> app -> api -> apps -> repo root
@@ -63,6 +63,13 @@ class Settings(BaseSettings):
 
     # Seconds to wait for a dependency before calling it unhealthy.
     health_check_timeout: float = 2.0
+
+    # --- GitHub App -------------------------------------------------------
+    github_app_id: str | None = Field(default=None, validation_alias="GITHUB_APP_ID")
+    github_client_id: str | None = Field(default=None, validation_alias="GITHUB_APP_CLIENT_ID")
+    github_client_secret: SecretStr | None = Field(default=None, validation_alias="GITHUB_APP_CLIENT_SECRET")
+    github_private_key: SecretStr | None = None
+    github_webhook_secret: SecretStr | None = None
 
     @field_validator("log_level")
     @classmethod

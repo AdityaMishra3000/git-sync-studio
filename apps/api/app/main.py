@@ -15,12 +15,19 @@ from fastapi import APIRouter, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.auth.router import router as auth_router
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
 from app.core.middleware import REQUEST_ID_HEADER, RequestContextMiddleware
 from app.core.redis import create_redis_client
 from app.db.session import create_db_engine, create_session_factory
+from app.drive.router import router as drive_router
+from app.github.router import router as github_router
 from app.ops.router import router as ops_router
+from app.prediction.router import router as prediction_router
+from app.readme.router import router as readme_router
+from app.jobs.router import router as jobs_router
+from app.repos.router import router as repos_router
 
 logger = get_logger("app.main")
 
@@ -82,6 +89,13 @@ def create_app() -> FastAPI:
 
     v1 = APIRouter(prefix=settings.api_v1_prefix)
     v1.include_router(ops_router)
+    v1.include_router(repos_router)
+    v1.include_router(auth_router)
+    v1.include_router(github_router)
+    v1.include_router(drive_router)
+    v1.include_router(prediction_router)
+    v1.include_router(readme_router)
+    v1.include_router(jobs_router)
     app.include_router(v1)
 
     @app.get("/", include_in_schema=False)

@@ -35,6 +35,7 @@ x-backend-environment: &backend-environment
 x-backend-source: &backend-source
   - ./apps/api:/srv/api
   - ./apps/worker:/srv/worker
+  - /home/adityam:/home/adityam
 
 services:
   postgres:

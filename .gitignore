@@ -108,3 +108,15 @@ desktop.ini
 # Agent / tooling scratch space
 # ---------------------------------------------------------------------------
 .claude/settings.local.json
+
+# Python virtual environments
+.venv/
+.venv-ml/
+venv/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
