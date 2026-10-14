@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { fetchServerApi } from "./server-api-client";
 import { Repository, User } from "../types/models";

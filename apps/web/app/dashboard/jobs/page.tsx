@@ -2,13 +2,20 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Activity } from "lucide-react";
 import { ApiService } from "@/lib/api-service";
 
+interface JobItem {
+  id: string;
+  name: string;
+  status: string;
+  created_at: string;
+}
+
 export default async function JobsPage() {
-  let jobs: any[] = [];
+  let jobs: JobItem[] = [];
   try {
     const res = await ApiService.getJobs();
     if (res) jobs = res;
-  } catch (err: any) {
-    if (err?.digest?.startsWith("NEXT_REDIRECT")) throw err;
+  } catch (err: unknown) {
+    if ((err as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw err;
     console.error(err);
   }
 

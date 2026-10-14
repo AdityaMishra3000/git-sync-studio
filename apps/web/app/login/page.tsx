@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiService } from "@/lib/api-service";
@@ -10,8 +9,8 @@ export default async function LoginPage() {
   try {
     const res = await ApiService.getLoginUrl();
     url = res.url;
-  } catch (err: any) {
-    if (err?.digest?.startsWith("NEXT_REDIRECT")) throw err;
+  } catch (err: unknown) {
+    if ((err as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw err;
     console.error(err);
   }
 
@@ -30,17 +29,16 @@ export default async function LoginPage() {
             </div>
           </div>
           <CardTitle className="text-2xl">GitSync Studio</CardTitle>
-          <CardDescription className="text-base mt-2">
-            Repository intelligence, large-file management, and evidence-grounded documentation.
+          <CardDescription>
+            Connect your GitHub account to start analyzing repositories and generating documentation.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form action={handleLogin}>
-            <Button className="w-full" size="lg" disabled={!url}>
+            <Button type="submit" className="w-full">
               Continue with GitHub
             </Button>
           </form>
-          {!url && <p className="text-destructive text-sm text-center mt-2">Backend connection failed.</p>}
         </CardContent>
       </Card>
     </div>
