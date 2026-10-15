@@ -1,5 +1,6 @@
 import contextlib
 import os
+from typing import Any
 from uuid import UUID
 
 import joblib
@@ -19,7 +20,9 @@ with contextlib.suppress(Exception):
 
 
 @router.get("/{pr_id}")
-async def get_prediction(pr_id: UUID, session: AsyncSession = Depends(get_db_session)) -> dict:
+async def get_prediction(
+    pr_id: UUID, session: AsyncSession = Depends(get_db_session)
+) -> dict[str, Any]:
     pr = await session.get(PullRequest, pr_id)
     if not pr:
         raise HTTPException(status_code=404, detail="PR not found")

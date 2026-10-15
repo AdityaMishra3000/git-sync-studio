@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any
 from uuid import UUID
 
 from celery.utils.log import get_task_logger
@@ -13,7 +14,7 @@ logger = get_task_logger(__name__)
 
 @celery_app.task(bind=True, name="tasks.pr_ingestion.ingest_historical_prs")
 def ingest_historical_prs(
-    self, repository_id: str, cursor: str | None = None
+    self: Any, repository_id: str, cursor: str | None = None
 ) -> dict[str, str | None]:
     return asyncio.run(_ingest_historical_prs(repository_id, cursor))
 

@@ -9,7 +9,10 @@ export const ApiService = {
   getRepos: (): Promise<Repository[]> => fetchServerApi("/api/v1/repos", { cache: "no-store" }),
   getRepo: (id: string): Promise<Repository> => fetchServerApi(`/api/v1/repos/${id}`, { cache: "no-store" }),
   getPrs: (repoId: string): Promise<any[]> => fetchServerApi(`/api/v1/repos/${repoId}/prs`, { cache: "no-store" }),
-  getLargeObjects: (): Promise<any[]> => fetchServerApi(`/api/v1/drive`, { cache: "no-store" }),
+  getLargeObjects: (): Promise<any[]> => fetchServerApi("/api/v1/drive", { cache: "no-store" }),
+  getDriveStatus: (): Promise<any> => fetchServerApi("/api/v1/drive/status", { cache: "no-store" }),
+  verifyLargeObject: (oid: string): Promise<any> =>
+    fetchServerApi(`/api/v1/drive/verify/${oid}`, { method: "POST", cache: "no-store" }),
   getPrediction: (prId: string): Promise<any> => fetchServerApi(`/api/v1/prediction/${prId}`, { cache: "no-store" }),
   getJobs: (): Promise<any[]> => fetchServerApi("/api/v1/jobs", { cache: "no-store" }),
   generateReadme: (repoPath: string): Promise<any> => fetchServerApi("/api/v1/readme/generate", {

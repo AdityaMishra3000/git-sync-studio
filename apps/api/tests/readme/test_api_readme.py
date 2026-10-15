@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
@@ -18,14 +19,14 @@ def fixtures_map(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Path]:
 
 
 @pytest.fixture(autouse=True)
-def override_db_dependency(app: FastAPI):
+def override_db_dependency(app: FastAPI) -> Iterator[None]:
     mock_session = AsyncMock()
     mock_result = MagicMock()
     mock_result.scalar_one_or_none.return_value = None
     mock_session.execute.return_value = mock_result
     mock_session.commit = AsyncMock()
 
-    async def _mock_get_db_session():
+    async def _mock_get_db_session() -> AsyncIterator[AsyncMock]:
         yield mock_session
 
     app.dependency_overrides[get_db_session] = _mock_get_db_session

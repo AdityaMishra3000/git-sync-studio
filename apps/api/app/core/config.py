@@ -11,11 +11,21 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import SecretStr, field_validator, Field
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# apps/api/app/core/config.py -> apps/api/app/core -> app -> api -> apps -> repo root
-REPO_ROOT = Path(__file__).resolve().parents[4]
+
+def _find_repo_root() -> Path:
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / ".git").exists() or (parent / "docker-compose.yml").exists():
+            return parent
+    if Path("/srv/api").exists():
+        return Path("/srv/api")
+    return current.parents[min(len(current.parents) - 1, 4)]
+
+
+REPO_ROOT = _find_repo_root()
 
 Environment = Literal["development", "test", "production"]
 LogFormat = Literal["console", "json"]
@@ -67,9 +77,28 @@ class Settings(BaseSettings):
     # --- GitHub App -------------------------------------------------------
     github_app_id: str | None = Field(default=None, validation_alias="GITHUB_APP_ID")
     github_client_id: str | None = Field(default=None, validation_alias="GITHUB_APP_CLIENT_ID")
-    github_client_secret: SecretStr | None = Field(default=None, validation_alias="GITHUB_APP_CLIENT_SECRET")
+    github_client_secret: SecretStr | None = Field(
+        default=None, validation_alias="GITHUB_APP_CLIENT_SECRET"
+    )
     github_private_key: SecretStr | None = None
     github_webhook_secret: SecretStr | None = None
+
+    # --- Google Drive & Large-File Storage ---------------------------------
+    google_oauth_client_id: str | None = Field(
+        default=None, validation_alias="GOOGLE_OAUTH_CLIENT_ID"
+    )
+    google_oauth_client_secret: SecretStr | None = Field(
+        default=None, validation_alias="GOOGLE_OAUTH_CLIENT_SECRET"
+    )
+    google_drive_refresh_token: SecretStr | None = Field(
+        default=None, validation_alias="GOOGLE_DRIVE_REFRESH_TOKEN"
+    )
+    google_drive_root_folder_id: str | None = Field(
+        default=None, validation_alias="GOOGLE_DRIVE_ROOT_FOLDER_ID"
+    )
+    large_object_storage_dir: Path = Field(
+        default=REPO_ROOT / ".gitsync" / "storage"
+    )
 
     @field_validator("log_level")
     @classmethod

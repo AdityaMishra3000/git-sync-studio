@@ -16,11 +16,11 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 class TokenResponse(BaseModel):
     access_token: str
-    token_type: str
+    token_type: str = "bearer"  # noqa: S105
 
 
 @router.get("/github/login")
-async def github_login():
+async def github_login() -> dict[str, str]:
     settings = get_settings()
     if settings.github_client_id == "dummy_client_id":
         return {"url": "http://localhost:3100/auth/callback?code=mock_code"}
@@ -31,7 +31,9 @@ async def github_login():
 
 
 @router.get("/github/callback", response_model=TokenResponse)
-async def github_callback(code: str, session: AsyncSession = Depends(get_db_session)):
+async def github_callback(
+    code: str, session: AsyncSession = Depends(get_db_session)
+) -> TokenResponse:
     if code == "mock_code":
         primary_email = "mock@example.com"
         name = "Demo User"
@@ -43,33 +45,7 @@ async def github_callback(code: str, session: AsyncSession = Depends(get_db_sess
             await session.commit()
             await session.refresh(user)
         token = create_access_token(user.id, timedelta(days=7))
-
-        # Fetch and sync repos
-        repos_resp = await client.get(
-            "https://api.github.com/user/repos?per_page=100",
-            headers={
-                "Authorization": f"token {access_token}",
-                "Accept": "application/vnd.github.v3+json",
-            },
-        )
-        if repos_resp.status_code == 200:
-            repos_data = repos_resp.json()
-            from app.db.models import Repository
-            for r in repos_data:
-                repo_result = await session.execute(select(Repository).where(Repository.github_repo_id == r["id"]))
-                if not repo_result.scalar_one_or_none():
-                    new_repo = Repository(
-                        github_repo_id=r["id"],
-                        owner=r["owner"]["login"],
-                        name=r["name"],
-                        default_branch=r.get("default_branch", "main"),
-                        visibility="private" if r.get("private") else "public",
-                        sync_status="synced"
-                    )
-                    session.add(new_repo)
-            await session.commit()
-
-        return {"access_token": token, "token_type": "bearer"}
+        return TokenResponse(access_token=token)
 
     settings = get_settings()
     async with httpx.AsyncClient() as client:
@@ -97,9 +73,10 @@ async def github_callback(code: str, session: AsyncSession = Depends(get_db_sess
             },
         )
         emails = user_resp.json()
-        primary_email = next((e["email"] for e in emails if e["primary"]), None)
-        if not primary_email:
+        primary_email_val = next((e["email"] for e in emails if e.get("primary")), None)
+        if not primary_email_val:
             raise HTTPException(status_code=400, detail="Primary email required")
+        primary_email = str(primary_email_val)
 
         profile_resp = await client.get(
             "https://api.github.com/user",
@@ -133,7 +110,8 @@ async def github_callback(code: str, session: AsyncSession = Depends(get_db_sess
             repos_data = repos_resp.json()
             from app.db.models import Repository
             for r in repos_data:
-                repo_result = await session.execute(select(Repository).where(Repository.github_repo_id == r["id"]))
+                stmt = select(Repository).where(Repository.github_repo_id == r["id"])
+                repo_result = await session.execute(stmt)
                 if not repo_result.scalar_one_or_none():
                     new_repo = Repository(
                         github_repo_id=r["id"],
@@ -146,7 +124,7 @@ async def github_callback(code: str, session: AsyncSession = Depends(get_db_sess
                     session.add(new_repo)
             await session.commit()
 
-        return {"access_token": token, "token_type": "bearer"}
+        return TokenResponse(access_token=token)
 
 
 class UserResponse(BaseModel):
@@ -156,5 +134,5 @@ class UserResponse(BaseModel):
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_me(user: User = Depends(get_current_user)):
-    return {"id": str(user.id), "email": user.email, "name": user.name}
+async def get_me(user: User = Depends(get_current_user)) -> UserResponse:
+    return UserResponse(id=str(user.id), email=user.email, name=user.name)

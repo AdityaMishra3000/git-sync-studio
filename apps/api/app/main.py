@@ -23,10 +23,10 @@ from app.core.redis import create_redis_client
 from app.db.session import create_db_engine, create_session_factory
 from app.drive.router import router as drive_router
 from app.github.router import router as github_router
+from app.jobs.router import router as jobs_router
 from app.ops.router import router as ops_router
 from app.prediction.router import router as prediction_router
 from app.readme.router import router as readme_router
-from app.jobs.router import router as jobs_router
 from app.repos.router import router as repos_router
 
 logger = get_logger("app.main")

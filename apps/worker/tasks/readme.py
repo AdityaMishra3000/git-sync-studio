@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 from uuid import UUID
 
 from celery.utils.log import get_task_logger
@@ -23,7 +24,7 @@ logger = get_task_logger(__name__)
 
 @celery_app.task(bind=True, name="tasks.readme.generate_documentation_job")
 def generate_documentation_job(
-    self,
+    self: Any,
     repo_path: str,
     repository_id: str | None = None,
     detail_level: ReadmeDetailLevel = "detailed",

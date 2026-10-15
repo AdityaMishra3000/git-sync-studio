@@ -1,5 +1,6 @@
 import asyncio
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from celery.utils.log import get_task_logger
@@ -13,7 +14,7 @@ logger = get_task_logger(__name__)
 
 
 @celery_app.task(bind=True, name="tasks.repo_sync.sync_repository")
-def sync_repository(self, repository_id: str) -> dict[str, str]:
+def sync_repository(self: Any, repository_id: str) -> dict[str, str]:
     return asyncio.run(_sync_repository(repository_id))
 
 

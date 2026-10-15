@@ -21,6 +21,6 @@ configure_logging(_settings.log_level, _settings.log_format)
 
 # Importing the task modules is what registers tasks with the Celery app.
 # A new task module MUST be imported here or the worker will never see it.
-from tasks import ops, pr_ingestion, readme, repo_sync  # noqa: E402
+from tasks import drive, ops, pr_ingestion, readme, repo_sync  # noqa: E402
 
-__all__ = ["celery_app", "ops", "pr_ingestion", "readme", "repo_sync"]
+__all__ = ["celery_app", "drive", "ops", "pr_ingestion", "readme", "repo_sync"]

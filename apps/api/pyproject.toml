@@ -101,7 +101,7 @@ plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
 # These ship no type information.
-module = ["celery.*", "kombu.*"]
+module = ["celery.*", "kombu.*", "joblib.*", "pandas.*", "sklearn.*"]
 ignore_missing_imports = true
 follow_imports = "skip"
 
